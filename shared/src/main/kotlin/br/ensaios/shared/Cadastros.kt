@@ -75,6 +75,11 @@ object Cadastros {
         ),
     )
 
+    val pistas = CadastroSpec(
+        type = RecordTypes.PISTA, title = "Pistas", singular = "pista", titleKey = "nome",
+        fields = listOf(FieldSpec("nome", "Pista (ex.: Pista Norte, Pista Sul)", required = true)),
+    )
+
     val faixas = CadastroSpec(
         type = RecordTypes.FAIXA, title = "Faixas", singular = "faixa", titleKey = "nome",
         fields = listOf(FieldSpec("nome", "Faixa (ex.: Faixa 1, Acostamento)", required = true)),
@@ -112,7 +117,7 @@ object Cadastros {
         fields = listOf(FieldSpec("placa", "Placa", required = true)),
     )
 
-    val all: List<CadastroSpec> = listOf(clientes, rodovias, faixas, frascos, cilindros, bandejas, veiculos)
+    val all: List<CadastroSpec> = listOf(clientes, rodovias, pistas, faixas, frascos, cilindros, bandejas, veiculos)
 
     fun byType(type: String): CadastroSpec? = all.firstOrNull { it.type == type }
 }

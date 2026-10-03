@@ -43,12 +43,17 @@ object Perm {
 object RecordTypes {
     const val CLIENTE = "cad_cliente"
     const val RODOVIA = "cad_rodovia"
+    const val PISTA = "cad_pista"
     const val FAIXA = "cad_faixa"
     const val FRASCO = "cad_frasco"
     const val CILINDRO = "cad_cilindro"
     const val BANDEJA = "cad_bandeja"
     const val VEICULO = "cad_veiculo"
+    const val MES = "producao_mes"
+    const val DIA = "producao_dia"
     const val SEGMENTO = "segmento"
+    const val INSITU = "ensaio_is"
+    const val PROCTOR = "ensaio_pr"
 
     fun isCadastro(type: String): Boolean = type.startsWith("cad_")
 
@@ -56,12 +61,17 @@ object RecordTypes {
     fun label(type: String): String = when (type) {
         CLIENTE -> "cliente"
         RODOVIA -> "rodovia"
+        PISTA -> "pista"
         FAIXA -> "faixa"
         FRASCO -> "frasco"
         CILINDRO -> "cilindro"
         BANDEJA -> "bandeja"
         VEICULO -> "veículo"
+        MES -> "mês de produção"
+        DIA -> "dia de produção"
         SEGMENTO -> "segmento"
+        INSITU -> "in situ"
+        PROCTOR -> "Proctor"
         else -> type
     }
 }

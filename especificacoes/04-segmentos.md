@@ -3,7 +3,12 @@
 O segmento é o trecho de serviço do dia; os ensaios são lançados dentro dele.
 
 ## Campos
-data, cliente, rodovia, serviço ou camada, posição inicial, posição final, lado (LD, LE ou eixo), faixa, largura da faixa (m), responsável, observações.
+data (vem do dia), cliente, rodovia, serviço ou camada, posição inicial, posição final, pista, faixa ou acostamento, largura da faixa (m), responsável, observações.
+O segmento **não tem lado**: LD, LE e eixo ficam em cada ensaio (taxa e resíduo têm também "Inteiro").
+
+## Organização
+Produção → **Mês** (adicionado à mão) → **Dias** (adicionados à mão, dentro do mês) → **Segmentos** → **Ensaios**.
+Tipos de registro: `producao_mes` (mes = "2026-10"), `producao_dia` (data, mes_id), `segmento` (dia_id).
 
 ## Posição (estaqueamento por km)
 - Formato **km + metros**: `168+340` = km 168 e 340 m. Guardar internamente em metros (168340).

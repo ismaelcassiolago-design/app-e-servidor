@@ -58,12 +58,7 @@ fun UsersScreen() {
 
     Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                "Usuários",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.weight(1f),
-            )
+            Text("${users.size} usuário(s)", modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.onSurfaceVariant)
             Button(onClick = { creating = true }) { Text("Novo usuário") }
         }
         if (users.isEmpty()) {

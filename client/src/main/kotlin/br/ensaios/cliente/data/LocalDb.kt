@@ -13,8 +13,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.serialization.json.JsonObject
 import java.util.UUID
 
-/** Registro local com a marca de "aguardando envio". */
-data class LocalRecord(val record: RecordDto, val pending: Boolean)
+/** Registro local. pending = aguardando envio; draft = rascunho ainda não concluído (não é enviado). */
+data class LocalRecord(val record: RecordDto, val pending: Boolean, val draft: Boolean = false)
 
 /**
  * Banco local do celular. Guarda uma cópia dos dados do servidor e as alterações
@@ -103,6 +103,7 @@ class LocalDb private constructor(context: Context) :
             updatedAt = getLong(getColumnIndexOrThrow("updated_at")),
         ),
         pending = getInt(getColumnIndexOrThrow("pending")) == 1,
+        draft = getInt(getColumnIndexOrThrow("pending")) == 2,
     )
 
     fun listByType(type: String): List<LocalRecord> =
@@ -125,11 +126,42 @@ class LocalDb private constructor(context: Context) :
             if (it.moveToFirst()) it.getInt(0) else 0
         }
 
+    /** Todos os registros de um tipo, incluindo excluídos (para não repetir números de série). */
+    private fun allIncludingDeleted(type: String): List<LocalRecord> =
+        readableDatabase.rawQuery("SELECT * FROM records WHERE type=?", arrayOf(type)).use { c ->
+            val list = mutableListOf<LocalRecord>()
+            while (c.moveToNext()) list.add(c.toLocal())
+            list
+        }
+
+    /**
+     * Próximo número da sequência do usuário para um tipo de ensaio. Nunca reinicia e nunca repete:
+     * usa o maior entre o que já existe no banco e o último reservado neste celular.
+     */
+    @Synchronized
+    fun nextSerialNumber(type: String, userId: String): Int {
+        val inDb = allIncludingDeleted(type)
+            .filter { it.record.createdBy == userId }
+            .mapNotNull { it.record.data["serie_num"]?.toString()?.trim('"')?.toIntOrNull() }
+            .maxOrNull() ?: 0
+        val key = "serie_${type}_$userId"
+        val reserved = readableDatabase.rawQuery("SELECT value FROM meta WHERE key=?", arrayOf(key)).use {
+            if (it.moveToFirst()) it.getString(0).toIntOrNull() ?: 0 else 0
+        }
+        val next = maxOf(inDb, reserved) + 1
+        val cv = ContentValues().apply {
+            put("key", key)
+            put("value", next.toString())
+        }
+        writableDatabase.insertWithOnConflict("meta", null, cv, SQLiteDatabase.CONFLICT_REPLACE)
+        return next
+    }
+
     // ---------------------------------------------------------------- alterações locais
 
     /** Cria (id = null) ou altera um registro no celular e marca para envio. */
     @Synchronized
-    fun saveLocal(type: String, id: String?, data: JsonObject, user: UserInfo, deleted: Boolean = false): String {
+    fun saveLocal(type: String, id: String?, data: JsonObject, user: UserInfo, deleted: Boolean = false, draft: Boolean = false): String {
         val now = System.currentTimeMillis()
         val existing = id?.let { get(it) }
         val recordId = id ?: UUID.randomUUID().toString()
@@ -148,7 +180,7 @@ class LocalDb private constructor(context: Context) :
             put("created_at", existing?.record?.createdAt ?: now)
             put("updated_by", user.id)
             put("updated_at", now)
-            put("pending", 1)
+            put("pending", if (draft) 2 else 1)
             put("local_rev", currentRev + 1)
         }
         writableDatabase.insertWithOnConflict("records", null, cv, SQLiteDatabase.CONFLICT_REPLACE)
@@ -173,7 +205,7 @@ class LocalDb private constructor(context: Context) :
     @Synchronized
     fun markSent(id: String, rev: Int) {
         val cv = ContentValues().apply { put("pending", 0) }
-        writableDatabase.update("records", cv, "id=? AND local_rev=?", arrayOf(id, rev.toString()))
+        writableDatabase.update("records", cv, "id=? AND local_rev=? AND pending=1", arrayOf(id, rev.toString()))
     }
 
     // ---------------------------------------------------------------- dados do servidor
@@ -205,7 +237,7 @@ class LocalDb private constructor(context: Context) :
         try {
             for (r in records) {
                 val pending = db.rawQuery("SELECT pending FROM records WHERE id=?", arrayOf(r.id)).use {
-                    it.moveToFirst() && it.getInt(0) == 1
+                    it.moveToFirst() && it.getInt(0) != 0
                 }
                 if (!pending) writeServer(r)
             }

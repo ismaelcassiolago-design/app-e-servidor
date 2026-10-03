@@ -36,6 +36,9 @@ object Num {
         return s.replace('.', ',')
     }
 
+    /** Massa calculada: sem arredondar (só tira o ruído de conta do computador), com vírgula. */
+    fun mass(value: Double): String = plain(value.roundTo(4))
+
     /** Data ISO (2026-10-03) → 03/10/2026. */
     fun date(iso: String?): String {
         if (iso == null || iso.length < 10) return iso ?: ""

@@ -7,6 +7,7 @@ Tipos de registro começam com `cad_`. Editar exige a permissão `editar_cadastr
 | --- | --- | --- | --- |
 | Clientes | cad_cliente | nome, contrato, logo, parametros (padrão do cliente) | Segmento, logo nos relatórios, limites |
 | Rodovias | cad_rodovia | nome (ex.: BR-163), trecho, cliente_id | Segmento |
+| Pistas | cad_pista | nome (ex.: Pista Norte, Pista Sul) | Segmento |
 | Faixas | cad_faixa | nome (ex.: Faixa 1, Faixa 2, Acostamento) | Segmento |
 | Frasco e areia | cad_frasco | identificacao, massa_esp_areia (g/cm³), peso_funil_placa (g), data_calibracao | In situ (linhas 4 e 6) |
 | Cilindro de Proctor | cad_cilindro | identificacao, massa (g), volume (cm³) | Proctor |

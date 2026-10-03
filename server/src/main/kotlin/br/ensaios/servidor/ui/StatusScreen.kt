@@ -32,7 +32,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import br.ensaios.servidor.BuildConfig
+import br.ensaios.servidor.ui.theme.Palette
+import br.ensaios.servidor.ui.theme.colorsFor
 import br.ensaios.servidor.Prefs
 import br.ensaios.servidor.ServerService
 import br.ensaios.servidor.db.ServerDb
@@ -71,8 +72,6 @@ fun StatusScreen(openBatterySettings: () -> Unit) {
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text("Servidor de ensaios", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
-        Text("Versão ${BuildConfig.VERSION_NAME}", color = MaterialTheme.colorScheme.onSurfaceVariant)
 
         Card(modifier = Modifier.fillMaxWidth()) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -131,6 +130,24 @@ fun StatusScreen(openBatterySettings: () -> Unit) {
                     saved = true
                 }) { Text("Salvar") }
                 if (saved) Text("Salvo", color = Color(0xFF2E7D32))
+            }
+        }
+
+        Card(modifier = Modifier.fillMaxWidth()) {
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Cor do app", fontWeight = FontWeight.SemiBold)
+                val atual by ServerTheme.palette.collectAsState()
+                Palette.values().filter { it != Palette.SOL_FORTE }.forEach { p ->
+                    val selected = p.name == atual
+                    OutlinedButton(
+                        onClick = { Prefs.setPalette(context, p.name); ServerTheme.palette.value = p.name },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Box(Modifier.size(18.dp).background(colorsFor(p).header, CircleShape))
+                        Spacer(Modifier.padding(4.dp))
+                        Text(p.label + if (selected) "  (em uso)" else "", fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal)
+                    }
+                }
             }
         }
 

@@ -13,4 +13,5 @@
 4. O túnel da Cloudflare é ligado no celular novo com a mesma chave; o endereço dos clientes não muda.
 
 ## Modo sol forte
-Tela de alto contraste com letras maiores, para o campo. Botão sempre visível para ligar/desligar.
+Tela de alto contraste com letras maiores, para o campo. Botão ☀ no cabeçalho de todas as telas, para ligar e desligar a qualquer momento.
+As cores normais (verde, laranja, vermelho e grafite) são escolhidas nas Configurações dos dois apps.

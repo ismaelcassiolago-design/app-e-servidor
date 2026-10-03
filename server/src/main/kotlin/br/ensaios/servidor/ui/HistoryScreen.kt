@@ -37,12 +37,7 @@ fun HistoryScreen() {
 
     Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                "Histórico de alterações",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.weight(1f),
-            )
+            Text("Últimas ${entries.size} alterações", modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.onSurfaceVariant)
             OutlinedButton(onClick = { entries = db.history() }) { Text("Atualizar") }
         }
         if (entries.isEmpty()) Text("Nenhuma alteração recebida ainda.")

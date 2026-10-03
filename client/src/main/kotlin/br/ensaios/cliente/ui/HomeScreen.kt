@@ -3,191 +3,125 @@ package br.ensaios.cliente.ui
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import br.ensaios.cliente.BuildConfig
-import br.ensaios.cliente.Route
+import androidx.compose.ui.unit.sp
+import br.ensaios.cliente.data.AppSettings
+import br.ensaios.cliente.data.Ensaios
 import br.ensaios.cliente.data.LocalDb
-import br.ensaios.cliente.data.Session
-import br.ensaios.cliente.net.ApiClient
+import br.ensaios.cliente.data.Producao
 import br.ensaios.cliente.sync.SyncEngine
-import br.ensaios.shared.ChangePasswordRequest
+import br.ensaios.cliente.ui.theme.appColors
 import br.ensaios.shared.UserInfo
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
+import java.time.LocalDate
 import java.util.Date
 import java.util.Locale
 
 @Composable
-fun HomeScreen(user: UserInfo, onOpen: (Route) -> Unit) {
+fun HomeScreen(
+    user: UserInfo,
+    onProducao: () -> Unit,
+    onRelatorios: () -> Unit,
+    onResumos: () -> Unit,
+    onCadastros: () -> Unit,
+    onConta: () -> Unit,
+) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val db = remember { LocalDb.get(context) }
     val status by SyncEngine.status.collectAsState()
     val changes by LocalDb.changes.collectAsState()
+    val casasGc by AppSettings.casasGc.collectAsState()
     val pending = remember(changes, status) { db.pendingCount() }
-    var askLogout by remember { mutableStateOf(false) }
-    var changingPassword by remember { mutableStateOf(false) }
-    val fmt = remember { SimpleDateFormat("dd/MM/yyyy HH:mm", Locale("pt", "BR")) }
+    val hora = remember { SimpleDateFormat("dd/MM HH:mm", Locale("pt", "BR")) }
+    val c = appColors
+
+    val hoje = LocalDate.now().toString()
+    val segsHoje = remember(changes) { Producao.todosSegmentos(db).filter { it.data == hoje } }
+    val ensaiosHoje = remember(changes, casasGc) { segsHoje.flatMap { s -> s.id?.let { Ensaios.doSegmento(db, it, casasGc) } ?: emptyList() } }
+    val producao = segsHoje.sumOf { it.extensao ?: 0L }
 
     // Sincroniza ao abrir o app.
     LaunchedEffect(Unit) { SyncEngine.sync(context) }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-            .verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+    AppScreen(
+        title = "Controle de Ensaios",
+        subtitle = "Olá, ${user.name} · nº %02d".format(user.number),
+        actions = {
+            IconButton(onClick = onConta) { Icon(Icons.Filled.Settings, contentDescription = "Configurações", tint = c.headerInk) }
+        },
     ) {
-        Text("Olá, ${user.name}", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
-        Text(
-            "Usuário nº %02d · versão %s".format(user.number, BuildConfig.VERSION_NAME),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-
-        Card(modifier = Modifier.fillMaxWidth()) {
-            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text("Sincronização", fontWeight = FontWeight.SemiBold)
-                Text(
-                    if (status.lastSuccessAt > 0) "Última: ${fmt.format(Date(status.lastSuccessAt))}"
-                    else "Ainda não sincronizado"
-                )
-                Text(
-                    if (pending == 0) "Nada aguardando envio" else "$pending alteração(ões) aguardando envio",
-                    color = if (pending == 0) Color(0xFF2E7D32) else Color(0xFFB26A00),
-                    fontWeight = FontWeight.SemiBold,
-                )
-                if (status.message.isNotEmpty()) {
-                    Text(status.message, color = if (status.ok) MaterialTheme.colorScheme.onSurfaceVariant else Color(0xFFC62828))
+        AppCard {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    when {
+                        status.running -> Pill("Sincronizando…", PillKind.PRIMARY)
+                        !status.ok -> Pill("Falha na sincronização", PillKind.BAD)
+                        pending > 0 -> Pill("$pending aguardando envio", PillKind.WARN)
+                        else -> Pill("● Sincronizado", PillKind.OK)
+                    }
+                    MutedText(
+                        if (status.lastSuccessAt > 0) "Última: ${hora.format(Date(status.lastSuccessAt))}" else "Ainda não sincronizado"
+                    )
+                    if (!status.ok && status.message.isNotEmpty()) Text(status.message, color = c.bad, fontSize = 12.sp)
                 }
                 Button(
                     enabled = !status.running,
                     onClick = { scope.launch { SyncEngine.sync(context) } },
-                ) { Text(if (status.running) "Sincronizando..." else "Sincronizar agora") }
+                    colors = ButtonDefaults.buttonColors(containerColor = c.primary),
+                ) { Text("Sincronizar", fontWeight = FontWeight.Bold) }
             }
         }
 
-        Text("Lançamentos", fontWeight = FontWeight.SemiBold)
-        MenuButton("Segmentos") { onOpen(Route.Segmentos) }
-        MenuButton("Cadastros") { onOpen(Route.CadastrosMenu) }
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Kpi("Produção hoje", "$producao m", "${segsHoje.size} segmento(s)", Modifier.weight(1f))
+            Kpi(
+                "Ensaios hoje", "${ensaiosHoje.size}",
+                "${ensaiosHoje.count { it.status == "ok" }} ✓ · ${ensaiosHoje.count { it.status == "bad" }} ✗",
+                Modifier.weight(1f),
+            )
+        }
 
-        Spacer(Modifier.height(8.dp))
-        Text("Conta", fontWeight = FontWeight.SemiBold)
-        MenuButton("Trocar senha") { changingPassword = true }
-        MenuButton("Sair") { askLogout = true }
-    }
-
-    if (askLogout) {
-        AlertDialog(
-            onDismissRequest = { askLogout = false },
-            title = { Text("Sair") },
-            text = {
-                Text(
-                    if (pending > 0) "Há $pending alteração(ões) ainda não enviadas. Elas ficam guardadas neste celular e serão enviadas quando você entrar de novo com o mesmo usuário."
-                    else "Deseja sair do app?"
-                )
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    askLogout = false
-                    Session.logout(context)
-                }) { Text("Sair") }
-            },
-            dismissButton = { TextButton(onClick = { askLogout = false }) { Text("Cancelar") } },
-        )
-    }
-
-    if (changingPassword) {
-        ChangePasswordDialog(onDismiss = { changingPassword = false })
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Tile(Icons.Filled.DateRange, "Dias de produção", "segmentos e ensaios", Modifier.weight(1f), onProducao)
+            Tile(Icons.Filled.Share, "Relatórios gerados", "PDFs salvos", Modifier.weight(1f), onRelatorios)
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Tile(Icons.Filled.Send, "Últimos resumos", "imagem e texto", Modifier.weight(1f), onResumos)
+            Tile(Icons.Filled.List, "Cadastros", "clientes, frascos…", Modifier.weight(1f), onCadastros)
+        }
     }
 }
 
+/** Telas que ainda vão chegar nas próximas versões. */
 @Composable
-private fun MenuButton(label: String, onClick: () -> Unit) {
-    OutlinedButton(onClick = onClick, modifier = Modifier.fillMaxWidth().height(52.dp)) {
-        Text(label, style = MaterialTheme.typography.titleMedium)
+fun EmBreveScreen(title: String, texto: String, onBack: (() -> Unit)?) {
+    AppScreen(title = title, onBack = onBack) {
+        AppCard {
+            TitleText("Em breve")
+            MutedText(texto)
+        }
     }
-}
-
-@Composable
-private fun ChangePasswordDialog(onDismiss: () -> Unit) {
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    var old by remember { mutableStateOf("") }
-    var new1 by remember { mutableStateOf("") }
-    var new2 by remember { mutableStateOf("") }
-    var message by remember { mutableStateOf<String?>(null) }
-    var done by remember { mutableStateOf(false) }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Trocar senha") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(
-                    value = old, onValueChange = { old = it }, label = { Text("Senha atual") },
-                    singleLine = true, visualTransformation = PasswordVisualTransformation(),
-                )
-                OutlinedTextField(
-                    value = new1, onValueChange = { new1 = it }, label = { Text("Nova senha") },
-                    singleLine = true, visualTransformation = PasswordVisualTransformation(),
-                )
-                OutlinedTextField(
-                    value = new2, onValueChange = { new2 = it }, label = { Text("Repita a nova senha") },
-                    singleLine = true, visualTransformation = PasswordVisualTransformation(),
-                )
-                message?.let { Text(it, color = if (done) Color(0xFF2E7D32) else Color(0xFFC62828)) }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = {
-                if (done) {
-                    onDismiss(); return@TextButton
-                }
-                if (new1 != new2) {
-                    message = "As senhas novas não são iguais"
-                    return@TextButton
-                }
-                scope.launch {
-                    try {
-                        ApiClient(Session.serverUrl(context), Session.token(context))
-                            .changePassword(ChangePasswordRequest(old, new1))
-                        done = true
-                        message = "Senha alterada"
-                    } catch (e: Exception) {
-                        message = e.message ?: "Erro"
-                    }
-                }
-            }) { Text(if (done) "Fechar" else "Salvar") }
-        },
-        dismissButton = { if (!done) TextButton(onClick = onDismiss) { Text("Cancelar") } },
-    )
 }

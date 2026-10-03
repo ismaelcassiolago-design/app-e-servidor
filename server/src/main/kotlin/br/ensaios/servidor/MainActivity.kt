@@ -17,20 +17,24 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.background
+import androidx.compose.runtime.collectAsState
+import br.ensaios.servidor.ui.ServerHeader
+import br.ensaios.servidor.ui.ServerTheme
+import br.ensaios.servidor.ui.theme.AppTheme
+import br.ensaios.servidor.ui.theme.Palette
+import br.ensaios.servidor.ui.theme.appColors
 import br.ensaios.servidor.ui.HistoryScreen
 import br.ensaios.servidor.ui.StatusScreen
 import br.ensaios.servidor.ui.UsersScreen
@@ -47,13 +51,11 @@ class MainActivity : ComponentActivity() {
         }
         if (Prefs.autoStart(this)) ServerService.start(this)
 
+        ServerTheme.palette.value = Prefs.palette(this)
         setContent {
-            MaterialTheme(
-                colorScheme = lightColorScheme(
-                    primary = Color(0xFF1F5FAD),
-                    secondary = Color(0xFF2E7D32),
-                )
-            ) {
+            val paletteName by ServerTheme.palette.collectAsState()
+            val palette = try { Palette.valueOf(paletteName) } catch (e: Exception) { Palette.VERDE }
+            AppTheme(palette) {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     ServerApp(
                         openBatterySettings = {
@@ -90,8 +92,12 @@ private fun ServerApp(openBatterySettings: () -> Unit) {
             }
         }
     ) { padding ->
-        Box(modifier = Modifier.padding(padding)) {
+        Box(modifier = Modifier.padding(padding).background(appColors.background)) {
             Column {
+                ServerHeader(
+                    when (tab) { 0 -> "Servidor de ensaios"; 1 -> "Usuários"; else -> "Histórico" },
+                    when (tab) { 0 -> "versão ${BuildConfig.VERSION_NAME}"; 1 -> "Quem pode entrar e o que pode fazer"; else -> "Quem criou e alterou cada registro" },
+                )
                 when (tab) {
                     0 -> StatusScreen(openBatterySettings)
                     1 -> UsersScreen()

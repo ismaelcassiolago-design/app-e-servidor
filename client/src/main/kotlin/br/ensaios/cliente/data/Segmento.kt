@@ -8,13 +8,14 @@ import kotlinx.serialization.json.buildJsonObject
 /** Segmento: trecho de serviço do dia. Uma faixa por segmento. */
 data class Segmento(
     val id: String?,
+    val diaId: String,
     val data: String,
     val clienteId: String,
     val rodoviaId: String,
     val servico: String,
     val kmIni: Long?,
     val kmFim: Long?,
-    val lado: String,
+    val pistaId: String,
     val faixaId: String,
     val largura: Double?,
     val responsavel: String,
@@ -31,13 +32,14 @@ data class Segmento(
     val intervalo: String get() = listOfNotNull(kmIni?.let { Km.format(it) }, kmFim?.let { Km.format(it) }).joinToString(" a ")
 
     fun toJson(rodoviaNome: String, faixaNome: String): JsonObject = buildJsonObject {
+        put("dia_id", JsonPrimitive(diaId))
         put("data", JsonPrimitive(data))
         put("cliente_id", JsonPrimitive(clienteId))
         put("rodovia_id", JsonPrimitive(rodoviaId))
         put("servico", JsonPrimitive(servico))
         kmIni?.let { put("km_ini", JsonPrimitive(it)) }
         kmFim?.let { put("km_fim", JsonPrimitive(it)) }
-        put("lado", JsonPrimitive(lado))
+        put("pista_id", JsonPrimitive(pistaId))
         put("faixa_id", JsonPrimitive(faixaId))
         largura?.let { put("largura", JsonPrimitive(it)) }
         put("responsavel", JsonPrimitive(responsavel))
@@ -47,19 +49,18 @@ data class Segmento(
     }
 
     companion object {
-        val LADOS = listOf("LD", "LE", "Eixo")
-
         fun from(r: LocalRecord): Segmento {
             val d = r.record.data
             return Segmento(
                 id = r.record.id,
+                diaId = d.text("dia_id"),
                 data = d.text("data"),
                 clienteId = d.text("cliente_id"),
                 rodoviaId = d.text("rodovia_id"),
                 servico = d.text("servico"),
                 kmIni = d.long("km_ini"),
                 kmFim = d.long("km_fim"),
-                lado = d.text("lado"),
+                pistaId = d.text("pista_id"),
                 faixaId = d.text("faixa_id"),
                 largura = d.num("largura"),
                 responsavel = d.text("responsavel"),

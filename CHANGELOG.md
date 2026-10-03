@@ -1,5 +1,24 @@
 # Histórico de versões
 
+## 0.3.0 — Visual novo, in situ e Proctor
+
+**App cliente**
+- Visual novo: barra colorida no topo, barra de abas embaixo (Início, Produção, Relatórios, Cadastros), cartões e etiquetas de status.
+- Três paletas de cor nas Configurações (verde, laranja, vermelho e grafite) e botão de sol forte (☀) no cabeçalho de todas as telas.
+- Tela inicial com produção e ensaios do dia e os botões Dias de produção, Relatórios gerados, Últimos resumos e Cadastros.
+- Produção organizada em Mês → Dias → Segmentos → Ensaios. Mês e dia são adicionados à mão.
+- Segmento passa a ter pista e faixa (ou acostamento). O lado (LD, LE, eixo) fica em cada ensaio; taxa e resíduo terão também "Inteiro".
+- Novo cadastro de pistas.
+- Ensaio in situ (frasco de areia) com a numeração da ficha CQ 06, umidade por cápsula, massa-alvo de U2, escolha automática do Proctor mais próximo, grau de compactação e APROVADO/REPROVADO pelos limites do cliente.
+- Ensaio Proctor de um ponto com cilindro do cadastro.
+- Número de série automático (ex.: IS-2026-01-0001), que nunca reinicia.
+- Ícones desenhados para cada ensaio: frasco de areia (in situ), cilindro e soquete (Proctor), caminhão (taxa), gota na cápsula (umidade) e panela com espátula (resíduo).
+- Rascunho salvo sozinho enquanto digita; só é enviado ao servidor ao tocar em "Concluir e enviar".
+- Configurações: casas decimais da taxa (3 ou 4) e do grau de compactação (1, 2 ou 3).
+
+**App servidor**
+- Mesmo visual novo e escolha da cor do app.
+
 ## 0.2.0 — Cadastros e segmentos
 
 **App cliente**
