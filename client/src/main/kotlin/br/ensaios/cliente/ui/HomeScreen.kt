@@ -33,7 +33,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import br.ensaios.cliente.BuildConfig
-import br.ensaios.cliente.Screen
+import br.ensaios.cliente.Route
 import br.ensaios.cliente.data.LocalDb
 import br.ensaios.cliente.data.Session
 import br.ensaios.cliente.net.ApiClient
@@ -46,7 +46,7 @@ import java.util.Date
 import java.util.Locale
 
 @Composable
-fun HomeScreen(user: UserInfo, onOpen: (Screen) -> Unit) {
+fun HomeScreen(user: UserInfo, onOpen: (Route) -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val db = remember { LocalDb.get(context) }
@@ -95,8 +95,9 @@ fun HomeScreen(user: UserInfo, onOpen: (Screen) -> Unit) {
             }
         }
 
-        Text("Cadastros", fontWeight = FontWeight.SemiBold)
-        MenuButton("Clientes") { onOpen(Screen.CLIENTES) }
+        Text("Lançamentos", fontWeight = FontWeight.SemiBold)
+        MenuButton("Segmentos") { onOpen(Route.Segmentos) }
+        MenuButton("Cadastros") { onOpen(Route.CadastrosMenu) }
 
         Spacer(Modifier.height(8.dp))
         Text("Conta", fontWeight = FontWeight.SemiBold)
@@ -164,7 +165,6 @@ private fun ChangePasswordDialog(onDismiss: () -> Unit) {
                     singleLine = true, visualTransformation = PasswordVisualTransformation(),
                 )
                 message?.let { Text(it, color = if (done) Color(0xFF2E7D32) else Color(0xFFC62828)) }
-                Row {}
             }
         },
         confirmButton = {

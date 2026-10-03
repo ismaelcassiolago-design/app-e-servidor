@@ -388,7 +388,7 @@ class ServerDb private constructor(context: Context) :
         if (json == null) return ""
         return try {
             val obj = ApiJson.parseToJsonElement(json) as JsonObject
-            listOf("serie", "nome", "placa", "identificacao")
+            listOf("serie", "resumo", "nome", "placa", "identificacao")
                 .firstNotNullOfOrNull { key -> obj[key]?.jsonPrimitive?.contentOrNull }
                 ?: ""
         } catch (e: Exception) {

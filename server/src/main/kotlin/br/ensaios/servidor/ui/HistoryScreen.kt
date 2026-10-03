@@ -23,14 +23,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import br.ensaios.servidor.db.ServerDb
+import br.ensaios.shared.RecordTypes
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-
-/** Nomes legíveis dos tipos de registro. */
-private val typeNames = mapOf(
-    "cad_cliente" to "Cliente",
-)
 
 @Composable
 fun HistoryScreen() {
@@ -55,7 +51,7 @@ fun HistoryScreen() {
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(12.dp)) {
                         Text(
-                            "${e.userName ?: "?"} ${e.action} ${typeNames[e.type] ?: e.type}",
+                            "${e.userName ?: "?"} ${e.action} ${RecordTypes.label(e.type)}",
                             fontWeight = FontWeight.SemiBold,
                         )
                         if (e.summary.isNotEmpty()) Text(e.summary)

@@ -42,8 +42,28 @@ object Perm {
 /** Tipos de registro. Cadastros começam com "cad_". */
 object RecordTypes {
     const val CLIENTE = "cad_cliente"
+    const val RODOVIA = "cad_rodovia"
+    const val FAIXA = "cad_faixa"
+    const val FRASCO = "cad_frasco"
+    const val CILINDRO = "cad_cilindro"
+    const val BANDEJA = "cad_bandeja"
+    const val VEICULO = "cad_veiculo"
+    const val SEGMENTO = "segmento"
 
     fun isCadastro(type: String): Boolean = type.startsWith("cad_")
+
+    /** Nome legível do tipo (usado no histórico do servidor). */
+    fun label(type: String): String = when (type) {
+        CLIENTE -> "cliente"
+        RODOVIA -> "rodovia"
+        FAIXA -> "faixa"
+        FRASCO -> "frasco"
+        CILINDRO -> "cilindro"
+        BANDEJA -> "bandeja"
+        VEICULO -> "veículo"
+        SEGMENTO -> "segmento"
+        else -> type
+    }
 }
 
 object WriteRules {
