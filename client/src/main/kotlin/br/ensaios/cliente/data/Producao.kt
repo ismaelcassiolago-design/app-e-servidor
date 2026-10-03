@@ -8,6 +8,8 @@ import br.ensaios.shared.TipoEnsaio
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonObjectBuilder
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonObject
+import br.ensaios.shared.UserInfo
 
 private val MESES = listOf(
     "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
@@ -56,6 +58,45 @@ object Producao {
 
     fun todosSegmentos(db: LocalDb): List<Segmento> =
         db.listByType(RecordTypes.SEGMENTO).map { Segmento.from(it) }
+
+    private fun todosDias(db: LocalDb): List<Dia> =
+        db.listByType(RecordTypes.DIA).map { Dia(it.record.id, it.record.data.text("data"), it.record.data.text("mes_id"), it.pending) }
+
+    /** Segmentos que não aparecem em nenhum dia (ex.: lançados antes da versão 0.3). */
+    fun semDia(db: LocalDb): List<Segmento> {
+        val dias = todosDias(db)
+        val ids = dias.map { it.id }.toSet()
+        val datas = dias.map { it.data }.toSet()
+        return todosSegmentos(db).filter { s ->
+            if (s.diaId.isNotEmpty()) s.diaId !in ids else s.data !in datas
+        }
+    }
+
+    /**
+     * Coloca cada segmento sem dia no mês e no dia da data dele,
+     * criando o mês e o dia quando ainda não existem. Retorna quantos foram organizados.
+     */
+    fun organizar(db: LocalDb, user: UserInfo): Int {
+        val orfaos = semDia(db).filter { it.data.length >= 10 && it.id != null }
+        for (s in orfaos) {
+            val ym = s.data.substring(0, 7)
+            val mesId = meses(db).firstOrNull { it.ym == ym }?.id
+                ?: db.saveLocal(RecordTypes.MES, null, buildJsonObject {
+                    put("mes", JsonPrimitive(ym))
+                    put("resumo", JsonPrimitive(nomeMes(ym)))
+                }, user)
+            val diaId = todosDias(db).firstOrNull { it.data == s.data }?.id
+                ?: db.saveLocal(RecordTypes.DIA, null, buildJsonObject {
+                    put("data", JsonPrimitive(s.data))
+                    put("mes_id", JsonPrimitive(mesId))
+                    put("resumo", JsonPrimitive(Num.date(s.data)))
+                }, user)
+            val rec = db.get(s.id!!) ?: continue
+            val novo = JsonObject(rec.record.data + ("dia_id" to JsonPrimitive(diaId)))
+            db.saveLocal(RecordTypes.SEGMENTO, s.id, novo, user)
+        }
+        return orfaos.size
+    }
 }
 
 // ------------------------------------------------------------------ ensaios

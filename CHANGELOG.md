@@ -1,5 +1,9 @@
 # Histórico de versões
 
+## 0.3.1 — Correção
+
+- Segmentos lançados antes da versão 0.3 (sem dia de produção) aparecem num aviso em "Dias de produção", com o botão "Organizar automaticamente", que cria o mês e o dia de cada um e coloca os segmentos dentro.
+
 ## 0.3.0 — Visual novo, in situ e Proctor
 
 **App cliente**

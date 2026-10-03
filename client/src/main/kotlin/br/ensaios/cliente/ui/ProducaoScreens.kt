@@ -64,7 +64,25 @@ fun MesesScreen(user: UserInfo, onOpen: (String) -> Unit) {
     var adding by remember { mutableStateOf(false) }
     val canCreate = Perm.has(user, Perm.CRIAR)
 
+    val semDia = remember(changes) { Producao.semDia(db) }
+
     AppScreen(title = "Dias de produção", subtitle = "Escolha o mês", fab = if (canCreate) ({ adding = true }) else null) {
+        if (semDia.isNotEmpty()) {
+            AppCard(border = appColors.warn, background = appColors.warnSoft) {
+                TitleText("${semDia.size} segmento(s) sem dia de produção")
+                MutedText(
+                    "Lançados antes da organização por mês e dia: " +
+                        semDia.mapNotNull { it.data.takeIf { d -> d.isNotEmpty() }?.let { d -> Num.date(d) } }.distinct().joinToString(", ") +
+                        ". O app cria o mês e o dia de cada um e coloca os segmentos dentro."
+                )
+                if (canCreate) {
+                    PrimaryButton("Organizar automaticamente") {
+                        Producao.organizar(db, user)
+                        SyncScheduler.syncSoon(context)
+                    }
+                }
+            }
+        }
         if (meses.isEmpty()) EmptyText("Nenhum mês ainda. Toque em + para adicionar o mês de produção.")
         meses.forEach { m ->
             val dias = Producao.dias(db, m)
