@@ -109,6 +109,7 @@ object Cadastros {
         fields = listOf(
             FieldSpec("identificacao", "Identificação", required = true),
             FieldSpec("area", "Área", FieldKind.DECIMAL, "m²", required = true),
+            FieldSpec("tara", "Tara (descontada no ensaio)", FieldKind.DECIMAL, "g"),
         ),
     )
 

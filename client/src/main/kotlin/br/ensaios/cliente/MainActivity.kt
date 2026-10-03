@@ -34,6 +34,10 @@ import br.ensaios.cliente.ui.LoginScreen
 import br.ensaios.cliente.ui.MesScreen
 import br.ensaios.cliente.ui.MesesScreen
 import br.ensaios.cliente.ui.ProctorScreen
+import br.ensaios.cliente.ui.RelatoriosScreen
+import br.ensaios.cliente.ui.ResiduoScreen
+import br.ensaios.cliente.ui.TaxaScreen
+import br.ensaios.cliente.ui.UmidadeScreen
 import br.ensaios.cliente.ui.SegmentoDetailScreen
 import br.ensaios.cliente.ui.SegmentoEditScreen
 import br.ensaios.cliente.ui.Tab
@@ -161,9 +165,11 @@ private fun ClientApp() {
                 is Route.Ensaio -> when (route.tipo) {
                     TipoEnsaio.IN_SITU -> InSituScreen(current, route.segmentoId, route.id, onDone = back)
                     TipoEnsaio.PROCTOR -> ProctorScreen(current, route.segmentoId, route.id, onDone = back)
-                    else -> EmBreveScreen(route.tipo.nome, "Este ensaio entra na versão 0.4.", back)
+                    TipoEnsaio.TAXA -> TaxaScreen(current, route.segmentoId, route.id, onDone = back)
+                    TipoEnsaio.UMIDADE -> UmidadeScreen(current, route.segmentoId, route.id, onDone = back)
+                    TipoEnsaio.RESIDUO -> ResiduoScreen(current, route.segmentoId, route.id, onDone = back)
                 }
-                Route.Relatorios -> EmBreveScreen("Relatórios gerados", "Os PDFs (padrão do app e padrão Neovia) entram na versão 0.4.", null)
+                Route.Relatorios -> RelatoriosScreen()
                 Route.Resumos -> EmBreveScreen("Últimos resumos", "Os resumos em imagem e texto para WhatsApp entram na versão 0.5.", back)
                 Route.CadastrosMenu -> CadastrosMenuScreen(onOpen = { go(Route.Cadastro(it)) })
                 is Route.Cadastro -> CadastroListScreen(spec = route.spec, user = current, onBack = back)

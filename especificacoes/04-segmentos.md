@@ -4,7 +4,7 @@ O segmento é o trecho de serviço do dia; os ensaios são lançados dentro dele
 
 ## Campos
 data (vem do dia), cliente, rodovia, serviço ou camada, posição inicial, posição final, pista, faixa ou acostamento, largura da faixa (m), responsável, observações.
-O segmento **não tem lado**: LD, LE e eixo ficam em cada ensaio (taxa e resíduo têm também "Inteiro").
+O segmento **não tem lado**: LD, LE, B.D (bordo direito), B.E (bordo esquerdo) e eixo ficam em cada ensaio (taxa e resíduo têm também "Inteiro").
 
 ## Organização
 Produção → **Mês** (adicionado à mão) → **Dias** (adicionados à mão, dentro do mês) → **Segmentos** → **Ensaios**.

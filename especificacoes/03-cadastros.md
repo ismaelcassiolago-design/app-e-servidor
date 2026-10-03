@@ -11,7 +11,7 @@ Tipos de registro começam com `cad_`. Editar exige a permissão `editar_cadastr
 | Faixas | cad_faixa | nome (ex.: Faixa 1, Faixa 2, Acostamento) | Segmento |
 | Frasco e areia | cad_frasco | identificacao, massa_esp_areia (g/cm³), peso_funil_placa (g), data_calibracao | In situ (linhas 4 e 6) |
 | Cilindro de Proctor | cad_cilindro | identificacao, massa (g), volume (cm³) | Proctor |
-| Bandeja ou lona | cad_bandeja | identificacao, area (m²) | Taxa de aplicação |
+| Bandeja ou lona | cad_bandeja | identificacao, area (m²), tara (g, descontada no ensaio) | Taxa de aplicação |
 | Veículos | cad_veiculo | placa | Ensaio de emulsão |
 
 ## Parâmetros (mínimos e máximos)

@@ -137,7 +137,21 @@ object Ensaios {
                 val h = d.num("h")?.let { "h ót ${Num.fmt(it, 1)}%" } ?: ""
                 "Proctor · $gs" to h
             }
-            else -> tipo.nome to ""
+            TipoEnsaio.TAXA -> {
+                val casas = d.long("casas_taxa")?.toInt() ?: 3
+                val t = d.num("kg_m2")?.let { "${Num.fmt(it, casas)} kg/m²" } ?: "sem resultado"
+                val p = d.num("projeto")?.let { "projeto ${Num.fmt(it, casas)}" } ?: ""
+                "Taxa ${d.text("tipo").lowercase()} · $t" to p
+            }
+            TipoEnsaio.UMIDADE -> {
+                val h = d.num("h")?.let { "${Num.fmt(it, 1)}%" } ?: "sem resultado"
+                "Umidade inicial · $h" to d.text("lado")
+            }
+            TipoEnsaio.RESIDUO -> {
+                val r = d.num("residuo")?.let { "${Num.fmt(it, 1)}%" } ?: "sem resultado"
+                val carga = d.num("carga")?.let { "${Num.plain(it)} t" } ?: ""
+                "Resíduo · $r" to listOf(d.text("placa"), carga).filter { it.isNotEmpty() }.joinToString(" · ")
+            }
         }
         return EnsaioItem(
             id = r.record.id,

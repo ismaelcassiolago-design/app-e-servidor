@@ -1,5 +1,41 @@
 # Histórico de versões
 
+## 0.4.2 — Totais do mês
+
+- Botão "Dias de produção" passa a se chamar "Produção".
+- Dentro do mês: extensão total produzida (m), área total (m²) e número de segmentos, atualizados a cada segmento lançado.
+- Lista de meses e de dias mostra também a área em m².
+
+## 0.4.1 — Bordos
+
+- Lado do ensaio com as opções B.D (bordo direito) e B.E (bordo esquerdo), em todos os ensaios.
+
+## 0.4.0 — Taxa, umidade, resíduo e PDFs
+
+**App cliente**
+- Ensaio de taxa de aplicação (cimento, cal, agregado ou imprimação): bandeja ou lona do cadastro com área e tara, pesos em gramas, taxa em kg/m². Cimento: taxa de projeto pelo Proctor (espessura em cm e % de cimento) e diferença com APROVADO/REPROVADO pelos limites do cliente. Imprimação: L/m² e taxa residual.
+- Ensaio de umidade inicial para reciclagem (cápsula), com limites mínimo e máximo do cliente.
+- Ensaio de resíduo por evaporação da emulsão (NBR 14376): veículo do cadastro ou placa digitada, peso da carga em toneladas, resíduo mínimo do cliente.
+- Lado "Inteiro" na taxa e no resíduo.
+- PDF do dia de produção (botão PDF no dia), em dois modelos:
+  - Padrão do app: resumo do dia e tabela de ensaios por segmento, com APROVADO/REPROVADO.
+  - Padrão Neovia: fichas CQ 06 (in situ, até 6 furos por folha), compactação (Proctor), CQ 05 (taxa) e tabelas de umidade e resíduo com o total de emulsão do dia.
+- Aba Relatórios: lista dos PDFs gerados, com abrir, compartilhar (WhatsApp, e-mail) e excluir.
+
+## 0.3.4 — Tara em gramas
+
+- Tara das bandejas e lonas em gramas. Na taxa, o peso do material (g) é convertido para kg no cálculo da taxa em kg/m².
+
+## 0.3.3 — Ajustes na umidade e nas bandejas
+
+- Alvo da umidade do in situ: peso que a balança deve marcar para a umidade ficar 2 pontos abaixo da ótima do Proctor vinculado (ex.: ótima 8% → 6%). A tela mostra a ótima usada.
+- Tara da cápsula vazia conta como zero (in situ e Proctor); o alvo aparece mesmo sem tara.
+- Cadastro de bandejas e lonas com tara (kg), que será descontada no ensaio de taxa.
+
+## 0.3.2 — Correção no in situ
+
+- Linha 10 (peso do solo do furo) passa a somar a amostra úmida da umidade: (8 − 9) + (U1 − U3). A tela mostra as duas parcelas e o total.
+
 ## 0.3.1 — Correção
 
 - Segmentos lançados antes da versão 0.3 (sem dia de produção) aparecem num aviso em "Dias de produção", com o botão "Organizar automaticamente", que cria o mês e o dia de cada um e coloca os segmentos dentro.

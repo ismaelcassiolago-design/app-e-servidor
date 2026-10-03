@@ -54,6 +54,9 @@ object RecordTypes {
     const val SEGMENTO = "segmento"
     const val INSITU = "ensaio_is"
     const val PROCTOR = "ensaio_pr"
+    const val TAXA = "ensaio_ta"
+    const val UMIDADE = "ensaio_um"
+    const val RESIDUO = "ensaio_re"
 
     fun isCadastro(type: String): Boolean = type.startsWith("cad_")
 
@@ -72,6 +75,9 @@ object RecordTypes {
         SEGMENTO -> "segmento"
         INSITU -> "in situ"
         PROCTOR -> "Proctor"
+        TAXA -> "taxa de aplicação"
+        UMIDADE -> "umidade inicial"
+        RESIDUO -> "resíduo da emulsão"
         else -> type
     }
 }

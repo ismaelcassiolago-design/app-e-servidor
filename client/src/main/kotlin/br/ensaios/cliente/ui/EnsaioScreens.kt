@@ -32,6 +32,7 @@ import br.ensaios.cliente.sync.SyncScheduler
 import br.ensaios.cliente.ui.theme.appColors
 import br.ensaios.shared.Calc
 import br.ensaios.shared.Km
+import br.ensaios.shared.Lados
 import br.ensaios.shared.Num
 import br.ensaios.shared.RecordTypes
 import br.ensaios.shared.Serie
@@ -48,7 +49,7 @@ import java.util.UUID
 // =================================================================== base comum dos ensaios
 
 /** Estado comum de um formulário de ensaio: identificação, série, rascunho automático. */
-private class EnsaioState(
+internal class EnsaioState(
     val db: LocalDb,
     val tipo: TipoEnsaio,
     val user: UserInfo,
@@ -91,7 +92,7 @@ private class EnsaioState(
 }
 
 @Composable
-private fun rememberEnsaio(tipo: TipoEnsaio, user: UserInfo, segmentoId: String, id: String?): EnsaioState {
+internal fun rememberEnsaio(tipo: TipoEnsaio, user: UserInfo, segmentoId: String, id: String?): EnsaioState {
     val context = LocalContext.current
     return remember(id) {
         val db = LocalDb.get(context)
@@ -101,25 +102,28 @@ private fun rememberEnsaio(tipo: TipoEnsaio, user: UserInfo, segmentoId: String,
 }
 
 /** Campos comuns a todos os ensaios (identificação). */
-private val idTextKeys = listOf("lado", "camada", "obs")
+internal val idTextKeys = listOf("lado", "camada", "obs")
 
-private fun JsonObject.limites(): JsonObject? = this["lim"] as? JsonObject
+internal fun JsonObject.limites(): JsonObject? = this["lim"] as? JsonObject
 
 /** Parâmetros do cliente do segmento (copiados para o ensaio no momento do lançamento). */
-private fun limitesDoCliente(db: LocalDb, seg: Segmento?): JsonObject {
+internal fun limitesDoCliente(db: LocalDb, seg: Segmento?): JsonObject {
     val cliente = seg?.clienteId?.takeIf { it.isNotEmpty() }?.let { db.get(it) }?.record?.data
     return buildJsonObject {
-        listOf("gc_min", "gc_max", "umid_desvio_min", "umid_desvio_max").forEach { k ->
+        listOf(
+            "gc_min", "gc_max", "umid_desvio_min", "umid_desvio_max", "umid_inicial_min", "umid_inicial_max",
+            "taxa_var_min", "taxa_var_max", "residuo_min",
+        ).forEach { k ->
             cliente?.num(k)?.let { put(k, JsonPrimitive(it)) }
         }
     }
 }
 
-private fun SnapshotStateMap<String, String>.n(key: String): Double? = Num.parse(this[key])
+internal fun SnapshotStateMap<String, String>.n(key: String): Double? = Num.parse(this[key])
 
 /** Rodapé com botões de concluir e excluir, e a situação do ensaio. */
 @Composable
-private fun EnsaioFooter(
+internal fun EnsaioFooter(
     st: EnsaioState,
     draftSaved: Boolean,
     erro: String?,
@@ -212,7 +216,7 @@ fun InSituScreen(user: UserInfo, segmentoId: String, id: String?, onDone: () -> 
             posM == null -> "Preencha a posição (km+m)"
             v.n("l4") == null || v.n("l6") == null -> "Escolha o frasco"
             listOf("l1", "l2", "l8", "l9").any { v.n(it) == null } -> "Preencha os pesos de 1, 2, 8 e 9"
-            listOf("u1", "u2", "u3").any { v.n(it) == null } -> "Preencha a umidade (U1, U2 e U3)"
+            listOf("u1", "u2").any { v.n(it) == null } -> "Preencha a umidade (U1 e U2)"
             r.gs == null -> "Confira os pesos: não foi possível calcular a massa específica"
             else -> null
         }
@@ -238,7 +242,7 @@ fun InSituScreen(user: UserInfo, segmentoId: String, id: String?, onDone: () -> 
                     TextInput("Furo", v["furo"] ?: "", set("furo"), modifier = Modifier.weight(1f))
                 }
                 TwoFields {
-                    SelectInput("Lado", v["lado"] ?: "", TipoEnsaio.IN_SITU.lados.map { Choice(it, it) }, set("lado"), Modifier.weight(1f))
+                    SelectInput("Lado", v["lado"] ?: "", TipoEnsaio.IN_SITU.lados.map { Choice(it, Lados.label(it)) }, set("lado"), Modifier.weight(1f))
                     TextInput("Camada", v["camada"] ?: "", set("camada"), modifier = Modifier.weight(1f))
                 }
             }
@@ -275,7 +279,12 @@ fun InSituScreen(user: UserInfo, segmentoId: String, id: String?, onDone: () -> 
                     NumberInput("8 · Solo + recipiente", v["l8"] ?: "", set("l8"), "g", modifier = Modifier.weight(1f))
                     NumberInput("9 · Recipiente", v["l9"] ?: "", set("l9"), "g", modifier = Modifier.weight(1f))
                 }
-                CalcField("10 · Peso do solo (8−9)", r.l10PesoSolo?.let { "${Num.mass(it)} g" } ?: "")
+                TwoFields {
+                    CalcField("Solo no recipiente (8−9)", r.soloRecipiente?.let { "${Num.mass(it)} g" } ?: "", Modifier.weight(1f))
+                    CalcField("Amostra da umidade (U1−U3)", r.amostraUmidade?.let { "${Num.mass(it)} g" } ?: "", Modifier.weight(1f))
+                }
+                CalcField("10 · Peso total do solo do furo", r.l10PesoSolo?.let { "${Num.mass(it)} g" } ?: "")
+                MutedText("O material úmido da cápsula também saiu do furo, por isso entra na soma.")
             }
         }
 
@@ -285,14 +294,15 @@ fun InSituScreen(user: UserInfo, segmentoId: String, id: String?, onDone: () -> 
                 TextInput("Cápsula nº", v["capsula"] ?: "", set("capsula"))
                 TwoFields {
                     NumberInput("U1 · Cápsula + solo úmido", v["u1"] ?: "", set("u1"), "g", modifier = Modifier.weight(1f))
-                    NumberInput("U3 · Cápsula", v["u3"] ?: "", set("u3"), "g", modifier = Modifier.weight(1f))
+                    NumberInput("U3 · Tara da cápsula", v["u3"] ?: "", set("u3"), "g", modifier = Modifier.weight(1f))
                 }
                 val hOt = v.n("h_ot")
                 val alvo = r.u2Alvo
                 if (alvo != null && hOt != null) {
                     val alvoH = hOt - 2
                     AppCard(background = c.warnSoft, border = c.warn) {
-                        Text("Alvo para U2 (umidade ${Num.fmt(alvoH, 1)}%)", color = c.warn, fontWeight = FontWeight.Bold)
+                        Text("Peso na balança para umidade de ${Num.fmt(alvoH, 1)}%", color = c.warn, fontWeight = FontWeight.Bold)
+                        MutedText("Ótima do Proctor ${v["proctor_serie"] ?: ""}: ${Num.fmt(hOt, 1)}% − 2" + if (v.n("u3") == null) " · tara da cápsula = 0" else "")
                         Text("${Num.fmt(alvo, 2)} g", color = c.ink, fontWeight = FontWeight.ExtraBold, fontSize = 24.sp)
                         val u2 = v.n("u2")
                         if (u2 != null) {
@@ -383,7 +393,7 @@ fun InSituScreen(user: UserInfo, segmentoId: String, id: String?, onDone: () -> 
     }
 }
 
-private fun escolherProctor(v: SnapshotStateMap<String, String>, p: LocalRecord) {
+internal fun escolherProctor(v: SnapshotStateMap<String, String>, p: LocalRecord) {
     val d = p.record.data
     v["proctor_id"] = p.record.id
     v["proctor_serie"] = d.text("serie")
@@ -452,7 +462,7 @@ fun ProctorScreen(user: UserInfo, segmentoId: String, id: String?, onDone: () ->
             posM == null -> "Preencha a posição (km+m)"
             v.n("cil_massa") == null || v.n("cil_volume") == null -> "Escolha o cilindro"
             v.n("bruto") == null -> "Preencha o peso bruto úmido"
-            listOf("u1", "u2", "u3").any { v.n(it) == null } -> "Preencha a umidade (U1, U2 e U3)"
+            listOf("u1", "u2").any { v.n(it) == null } -> "Preencha a umidade (pesos bruto úmido e seco)"
             r.gs == null -> "Confira os pesos: não foi possível calcular a massa específica"
             else -> null
         }
@@ -474,7 +484,7 @@ fun ProctorScreen(user: UserInfo, segmentoId: String, id: String?, onDone: () ->
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 TwoFields {
                     KmInput("Posição", v["posicao"] ?: "", set("posicao"), Modifier.weight(1f))
-                    SelectInput("Lado", v["lado"] ?: "", TipoEnsaio.PROCTOR.lados.map { Choice(it, it) }, set("lado"), Modifier.weight(1f))
+                    SelectInput("Lado", v["lado"] ?: "", TipoEnsaio.PROCTOR.lados.map { Choice(it, Lados.label(it)) }, set("lado"), Modifier.weight(1f))
                 }
                 TextInput("Camada", v["camada"] ?: "", set("camada"))
                 TwoFields {
@@ -496,7 +506,7 @@ fun ProctorScreen(user: UserInfo, segmentoId: String, id: String?, onDone: () ->
                     NumberInput("Peso bruto úmido", v["u1"] ?: "", set("u1"), "g", modifier = Modifier.weight(1f))
                     NumberInput("Peso bruto seco", v["u2"] ?: "", set("u2"), "g", modifier = Modifier.weight(1f))
                 }
-                NumberInput("Peso da cápsula", v["u3"] ?: "", set("u3"), "g")
+                NumberInput("Tara da cápsula (vazio = 0)", v["u3"] ?: "", set("u3"), "g")
                 TwoFields {
                     CalcField("Peso da água", r.umidade.u4Agua?.let { "${Num.mass(it)} g" } ?: "", Modifier.weight(1f))
                     CalcField("Peso do solo seco", r.umidade.u5SoloSeco?.let { "${Num.mass(it)} g" } ?: "", Modifier.weight(1f))

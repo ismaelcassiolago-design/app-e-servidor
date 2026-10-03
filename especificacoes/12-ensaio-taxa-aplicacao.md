@@ -10,11 +10,11 @@ Data, km inicial, km final, faixa, bandeja (cadastro).
 
 | Coluna | Campo | Origem |
 | --- | --- | --- |
-| A | Tara da bandeja | Digitado |
-| C | Tara + material | Digitado |
-| D | Peso do material | C − A |
+| A | Tara da bandeja (g) | Cadastro da bandeja (pode ser alterada no ensaio) |
+| C | Tara + material (g) | Digitado |
+| D | Peso do material (g) | C − A |
 | Área | Área da bandeja/lona (m²) | Cadastro |
-| kg/m² | Taxa | D (kg) / área |
+| kg/m² | Taxa | D (g) / 1000 / área |
 | L/m² | Taxa (imprimação) | kg/m² / densidade do ligante |
 | Resíduo | Taxa residual (imprimação) | L/m² × teor de resíduo / 100 |
 

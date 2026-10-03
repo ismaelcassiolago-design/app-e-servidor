@@ -12,6 +12,10 @@
 - Filtros: data, cliente, rodovia, segmento, tipo, usuário.
 - Logos: empresa (padrão salvo) e cliente (do cadastro de clientes). Alteráveis.
 
+## Situação na 0.4
+- PDF do dia (botão PDF no dia de produção), só com ensaios concluídos. Arquivos em `files/relatorios/` no celular; aba Relatórios lista, abre, compartilha e exclui.
+- Logos entram na 0.5.
+
 ## Modelo do PDF
 O usuário escolhe ao gerar:
 - **Padrão do app**.

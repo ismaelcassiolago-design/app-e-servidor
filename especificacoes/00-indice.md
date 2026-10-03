@@ -15,7 +15,7 @@ Cada arquivo descreve uma funcionalidade. A coluna "Versão" indica em qual vers
 | 13-ensaio-umidade-inicial.md | Umidade inicial para reciclagem | 0.4 |
 | 14-ensaio-residuo-emulsao.md | Resíduo por evaporação RR-2C | 0.4 |
 | 20-fotos.md | Fotos com carimbo e GPS | 0.5 |
-| 21-relatorios.md | PDF (padrão app e Neovia), imagem, texto, Excel | 0.3 / 0.5 |
+| 21-relatorios.md | PDF (padrão app e Neovia), imagem, texto, Excel | 0.4 (PDF) / 0.5 |
 | 22-notificacoes-e-viga.md | Notificações e viga Benkelman | 0.6 |
 | 23-lixeira-backup-migracao.md | Lixeira, backup, migração, modo sol forte | 0.6 |
 

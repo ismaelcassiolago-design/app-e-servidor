@@ -105,7 +105,7 @@ fun HomeScreen(
         }
 
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Tile(Icons.Filled.DateRange, "Dias de produção", "segmentos e ensaios", Modifier.weight(1f), onProducao)
+            Tile(Icons.Filled.DateRange, "Produção", "meses, dias, segmentos e ensaios", Modifier.weight(1f), onProducao)
             Tile(Icons.Filled.Share, "Relatórios gerados", "PDFs salvos", Modifier.weight(1f), onRelatorios)
         }
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {

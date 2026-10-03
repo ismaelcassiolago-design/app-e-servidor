@@ -66,7 +66,7 @@ fun MesesScreen(user: UserInfo, onOpen: (String) -> Unit) {
 
     val semDia = remember(changes) { Producao.semDia(db) }
 
-    AppScreen(title = "Dias de produção", subtitle = "Escolha o mês", fab = if (canCreate) ({ adding = true }) else null) {
+    AppScreen(title = "Produção", subtitle = "Escolha o mês", fab = if (canCreate) ({ adding = true }) else null) {
         if (semDia.isNotEmpty()) {
             AppCard(border = appColors.warn, background = appColors.warnSoft) {
                 TitleText("${semDia.size} segmento(s) sem dia de produção")
@@ -86,13 +86,15 @@ fun MesesScreen(user: UserInfo, onOpen: (String) -> Unit) {
         if (meses.isEmpty()) EmptyText("Nenhum mês ainda. Toque em + para adicionar o mês de produção.")
         meses.forEach { m ->
             val dias = Producao.dias(db, m)
-            val total = dias.sumOf { d -> Producao.segmentos(db, d, segs).sumOf { it.extensao ?: 0L } }
+            val segsMes = dias.flatMap { d -> Producao.segmentos(db, d, segs) }
+            val total = segsMes.sumOf { it.extensao ?: 0L }
+            val areaMes = segsMes.sumOf { it.area ?: 0.0 }
             AppCard(onClick = { onOpen(m.id) }) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Badge(m.ym.substringAfter("-"), m.ym.substringBefore("-"))
                     Column(Modifier.padding(start = 12.dp)) {
                         TitleText(nomeMes(m.ym))
-                        MutedText("${dias.size} dia(s) de produção · ${metros(total)}")
+                        MutedText("${dias.size} dia(s) · ${metros(total)} · ${area(areaMes)}")
                         if (m.pending) Pill("Aguardando envio", PillKind.WARN)
                     }
                 }
@@ -152,7 +154,9 @@ fun MesScreen(user: UserInfo, mesId: String, onBack: () -> Unit, onOpenDia: (Str
     val canCreate = Perm.has(user, Perm.CRIAR)
     var erro by remember { mutableStateOf<String?>(null) }
     var askDelete by remember { mutableStateOf(false) }
-    val totalMes = dias.sumOf { d -> Producao.segmentos(db, d, segs).sumOf { it.extensao ?: 0L } }
+    val segsMes = dias.flatMap { d -> Producao.segmentos(db, d, segs) }
+    val totalMes = segsMes.sumOf { it.extensao ?: 0L }
+    val areaMes = segsMes.sumOf { it.area ?: 0.0 }
 
     val addDia: () -> Unit = {
         val ym = YearMonth.parse(mes.ym)
@@ -185,6 +189,13 @@ fun MesScreen(user: UserInfo, mesId: String, onBack: () -> Unit, onOpenDia: (Str
         fab = if (canCreate) addDia else null,
     ) {
         erro?.let { Text(it, color = appColors.bad) }
+        ResultBox(
+            listOf(
+                "Extensão produzida" to metros(totalMes),
+                "Área produzida" to area(areaMes),
+                "Segmentos" to "${segsMes.size}",
+            )
+        )
         if (dias.isEmpty()) {
             EmptyText("Nenhum dia ainda. Toque em + para adicionar um dia de produção.")
             if (Perm.has(user, Perm.EXCLUIR)) SecondaryButton("Excluir este mês", color = appColors.bad) { askDelete = true }
@@ -198,7 +209,7 @@ fun MesScreen(user: UserInfo, mesId: String, onBack: () -> Unit, onOpenDia: (Str
                     Badge("%02d".format(dt.dayOfMonth), diaSemana(dt))
                     Column(Modifier.padding(start = 12.dp)) {
                         TitleText(Num.date(d.data))
-                        MutedText("${ss.size} segmento(s) · ${metros(total)}")
+                        MutedText("${ss.size} segmento(s) · ${metros(total)} · ${area(ss.sumOf { it.area ?: 0.0 })}")
                         if (d.pending) Pill("Aguardando envio", PillKind.WARN)
                     }
                 }
@@ -250,11 +261,13 @@ fun DiaScreen(user: UserInfo, diaId: String, onBack: () -> Unit, onOpenSegmento:
     val total = segs.sumOf { it.extensao ?: 0L }
     val areaTotal = segs.sumOf { it.area ?: 0.0 }
     var askDelete by remember { mutableStateOf(false) }
+    var gerarPdf by remember { mutableStateOf(false) }
 
     AppScreen(
         title = Num.date(dia.data),
         subtitle = "${segs.size} segmento(s) · ${metros(total)}",
         onBack = onBack,
+        actions = { if (Perm.has(user, Perm.RELATORIOS) && segs.isNotEmpty()) HeaderAction("PDF") { gerarPdf = true } },
         fab = if (Perm.has(user, Perm.CRIAR)) onNewSegmento else null,
     ) {
         if (segs.isNotEmpty()) {
@@ -271,6 +284,8 @@ fun DiaScreen(user: UserInfo, diaId: String, onBack: () -> Unit, onOpenSegmento:
             }
         }
     }
+
+    if (gerarPdf) GerarPdfDialog(dia, user.name) { gerarPdf = false }
 
     if (askDelete) {
         ConfirmDialog("Excluir dia", "O dia ${Num.date(dia.data)} vai para a lixeira.", onDismiss = { askDelete = false }) {

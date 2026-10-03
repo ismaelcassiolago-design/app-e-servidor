@@ -19,7 +19,7 @@ Furo, posição (km+m), camada, posição (LD/LE/eixo), frasco (do cadastro), Pr
 | 7 | Volume do solo | 5 / 6 |
 | 8 | Peso do solo e recipiente | Digitado |
 | 9 | Peso do recipiente | Digitado |
-| 10 | Peso do solo | **8 − 9** (a ficha impressa diz "9 − 8": erro da ficha) |
+| 10 | Peso total do solo do furo | **(8 − 9) + (U1 − U3)**: o solo do recipiente mais a amostra úmida que foi para a cápsula da umidade (a ficha impressa diz "9 − 8") |
 
 ## Umidade de campo (só cápsula)
 | Linha | Campo | Origem |
@@ -43,11 +43,12 @@ Furo, posição (km+m), camada, posição (LD/LE/eixo), frasco (do cadastro), Pr
 3. a tela lista os Proctors do segmento (série, posição, γs) para conferir ou trocar.
 
 ## Massa-alvo da umidade
+Tara da cápsula (U3) vazia conta como zero (vale para todas as umidades).
 Assim que U1 e U3 são digitados, mostrar o alvo de U2 para a umidade = ótima − 2 pontos:
 
 U2_alvo = U3 + (U1 − U3) / (1 + (h_ót − 2)/100)
 
-Exemplo: U3 = 50,00 g; U1 = 550,00 g; h_ót = 10,0% → alvo 8,0% → U2_alvo = 50,00 + 500,00/1,08 = 512,96 g.
+Exemplo: U3 = 50,00 g; U1 = 550,00 g; h_ót = 10,0% → alvo 8,0% (ótima 8% → alvo 6%) → U2_alvo = 50,00 + 500,00/1,08 = 512,96 g.
 Balança acima do alvo = umidade ainda acima de 8,0%.
 
 ## Status

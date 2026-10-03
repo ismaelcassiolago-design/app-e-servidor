@@ -19,9 +19,11 @@ data class Umidade(val u4Agua: Double?, val u5SoloSeco: Double?, val h: Double?)
 
 object Calc {
 
+    /** A tara da cápsula (U3) vazia conta como zero. */
     fun umidade(u1: Double?, u2: Double?, u3: Double?): Umidade {
+        val tara = u3 ?: 0.0
         val u4 = sub(u1, u2)
-        val u5 = sub(u2, u3)
+        val u5 = sub(u2, tara)
         val h = div(u4, u5)?.times(100)
         return Umidade(u4, u5, h)
     }
@@ -35,6 +37,11 @@ object Calc {
         val l3AreiaDeslocada: Double?,
         val l5AreiaCavidade: Double?,
         val l7Volume: Double?,
+        /** Solo que ficou no recipiente (8 − 9). */
+        val soloRecipiente: Double?,
+        /** Amostra úmida tirada do furo para a umidade (U1 − U3). */
+        val amostraUmidade: Double?,
+        /** 10 · Peso total do solo retirado do furo = (8 − 9) + (U1 − U3). */
         val l10PesoSolo: Double?,
         val umidade: Umidade,
         val gh: Double?,
@@ -52,19 +59,27 @@ object Calc {
         val l3 = sub(l1, l2)
         val l5 = sub(l3, l4)
         val l7 = div(l5, l6)
-        val l10 = sub(l8, l9)
+        val noRecipiente = sub(l8, l9)
+        val amostra = sub(u1, u3 ?: 0.0)
+        // O material da cápsula também saiu do furo: soma ao peso do solo.
+        val l10 = if (noRecipiente != null && amostra != null) noRecipiente + amostra else null
         val um = umidade(u1, u2, u3)
         val gh = div(l10, l7)
         val gs = seca(gh, um.h)
         val gc = div(gs, gsLab)?.times(100)
         val alvo = massaAlvo(u1, u3, hOtima)
-        return InSitu(l3, l5, l7, l10, um, gh, gs, gc, alvo)
+        return InSitu(l3, l5, l7, noRecipiente, amostra, l10, um, gh, gs, gc, alvo)
     }
 
-    /** U2 alvo = U3 + (U1 − U3) / (1 + (h_ót − 2)/100) */
+    /**
+     * Peso que a balança deve marcar (cápsula + solo seco) para a umidade ficar
+     * 2 pontos abaixo da ótima do Proctor vinculado (ex.: ótima 8% → alvo 6%).
+     * U2 alvo = U3 + (U1 − U3) / (1 + (h_ót − 2)/100). Tara (U3) vazia = 0.
+     */
     fun massaAlvo(u1: Double?, u3: Double?, hOtima: Double?): Double? {
-        if (u1 == null || u3 == null || hOtima == null) return null
-        return u3 + (u1 - u3) / (1 + (hOtima - 2) / 100)
+        if (u1 == null || hOtima == null) return null
+        val tara = u3 ?: 0.0
+        return tara + (u1 - tara) / (1 + (hOtima - 2) / 100)
     }
 
     // ------------------------------------------------------------ Proctor de um ponto (NBR 7182)
@@ -84,6 +99,46 @@ object Calc {
         val solo = sub(pesoBrutoUmido, pesoCilindro)
         val gh = div(solo, volumeCilindro)
         return Proctor(um, solo, gh, seca(gh, um.h))
+    }
+
+    // ------------------------------------------------------------ taxa de aplicação (ficha CQ 05)
+
+    data class Taxa(
+        /** D · peso do material (g) = (tara + material) − tara. */
+        val pesoMaterial: Double?,
+        /** Taxa aplicada em kg/m² = D / 1000 / área. */
+        val kgM2: Double?,
+        /** Imprimação: taxa em L/m² = kg/m² / densidade do ligante (kg/L). */
+        val lM2: Double?,
+        /** Imprimação: taxa residual = L/m² × teor de resíduo / 100. */
+        val residual: Double?,
+        /** Cimento: taxa de projeto (kg/m²) = 1 × 1 × e × γs / 100 × %. */
+        val projeto: Double?,
+        /** Diferença da aplicada para a de projeto (%). */
+        val variacao: Double?,
+    )
+
+    fun taxa(
+        tara: Double?, taraMaterial: Double?, area: Double?,
+        densidadeLigante: Double?, teorResiduo: Double?,
+        espessuraCm: Double?, gsProctor: Double?, pctCimento: Double?,
+    ): Taxa {
+        val material = sub(taraMaterial, tara ?: 0.0)
+        val kg = div(material?.div(1000), area)
+        val l = div(kg, densidadeLigante)
+        val res = if (l != null && teorResiduo != null) l * teorResiduo / 100 else null
+        val proj = if (espessuraCm != null && gsProctor != null && pctCimento != null)
+            (1.0 * 1.0 * (espessuraCm / 100) * (gsProctor * 1000)) / 100 * pctCimento else null
+        val varia = if (kg != null && proj != null && proj > 0) (kg - proj) / proj * 100 else null
+        return Taxa(material, kg, l, res, proj, varia)
+    }
+
+    // ------------------------------------------------------------ resíduo por evaporação (NBR 14376)
+
+    /** Resíduo (%) = (recipiente com resíduo − recipiente) / (recipiente com amostra − recipiente) × 100 */
+    fun residuo(recipiente: Double?, comAmostra: Double?, comResiduo: Double?): Double? {
+        val tara = recipiente ?: 0.0
+        return div(sub(comResiduo, tara), sub(comAmostra, tara))?.times(100)
     }
 
     // ------------------------------------------------------------ status
@@ -115,14 +170,30 @@ enum class TipoEnsaio(
 ) {
     IN_SITU(RecordTypes.INSITU, "IS", "In situ", true),
     PROCTOR(RecordTypes.PROCTOR, "PR", "Proctor", true),
-    TAXA("ensaio_ta", "TA", "Taxa de aplicação", false, aceitaInteiro = true),
-    UMIDADE("ensaio_um", "UM", "Umidade inicial", false),
-    RESIDUO("ensaio_re", "RE", "Resíduo emulsão", false, aceitaInteiro = true);
+    TAXA(RecordTypes.TAXA, "TA", "Taxa de aplicação", true, aceitaInteiro = true),
+    UMIDADE(RecordTypes.UMIDADE, "UM", "Umidade inicial", true),
+    RESIDUO(RecordTypes.RESIDUO, "RE", "Resíduo emulsão", true, aceitaInteiro = true);
 
     /** Opções de lado do ensaio. */
-    val lados: List<String> get() = if (aceitaInteiro) listOf("LD", "LE", "Eixo", "Inteiro") else listOf("LD", "LE", "Eixo")
+    val lados: List<String> get() = if (aceitaInteiro) Lados.base + "Inteiro" else Lados.base
 
     companion object {
         fun byType(type: String): TipoEnsaio? = values().firstOrNull { it.type == type }
     }
+}
+
+/** Lados do ensaio. B.D e B.E = bordo direito e bordo esquerdo. */
+object Lados {
+    val base = listOf("LD", "LE", "B.D", "B.E", "Eixo")
+
+    private val nomes = mapOf(
+        "LD" to "LD · lado direito",
+        "LE" to "LE · lado esquerdo",
+        "B.D" to "B.D · bordo direito",
+        "B.E" to "B.E · bordo esquerdo",
+        "Eixo" to "Eixo",
+        "Inteiro" to "Inteiro (largura toda)",
+    )
+
+    fun label(lado: String): String = nomes[lado] ?: lado
 }
