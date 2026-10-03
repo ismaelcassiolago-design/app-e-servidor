@@ -1,0 +1,65 @@
+name: Compilar APKs
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.9"
+
+      - name: Compilar servidor e cliente
+        run: |
+          set -o pipefail
+          gradle :server:assembleRelease :client:assembleRelease --stacktrace --no-daemon 2>&1 | tee build.log
+
+      - name: Renomear APKs
+        id: apks
+        run: |
+          VERSION=$(grep '^appVersionName=' gradle.properties | cut -d= -f2)
+          mkdir -p saida
+          cp server/build/outputs/apk/release/*.apk "saida/ensaios-servidor-$VERSION.apk"
+          cp client/build/outputs/apk/release/*.apk "saida/ensaios-cliente-$VERSION.apk"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          ls -la saida
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: apks-${{ steps.apks.outputs.version }}-build${{ github.run_number }}
+          path: saida/*.apk
+
+      - name: Publicar na página de versões (Releases)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.apks.outputs.version }}-build${{ github.run_number }}
+          name: Versão ${{ steps.apks.outputs.version }} (build ${{ github.run_number }})
+          body: Veja o que mudou no CHANGELOG.md.
+          files: saida/*.apk
+
+      # Guarda o resultado da compilação no ramo "logs", para conferência e correção de erros.
+      - name: Guardar log da compilação
+        if: always()
+        run: |
+          mkdir -p /tmp/logs
+          cp build.log /tmp/logs/build.log 2>/dev/null || echo "sem log" > /tmp/logs/build.log
+          echo "status=${{ job.status }} run=${{ github.run_number }} commit=${{ github.sha }}" > /tmp/logs/status.txt
+          cd /tmp/logs
+          git init -q
+          git add .
+          git -c user.name=ci -c user.email=ci@example.com commit -qm "log ${{ github.run_number }}"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" HEAD:logs
